@@ -1,0 +1,40 @@
+# Compiled Binaries & Executables
+thread1
+thread2
+thread_sum
+race
+mutex
+pthread_perf
+omp1
+omp_sum
+omp_race
+omp_critical
+omp_barrier
+omp_perf
+sequential
+*.out
+*.exe
+
+# Object & Library Files
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+
+# Temporary & Editor Files
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+
+# Python Cache (if running graph generator)
+__pycache__/
+*.pyc
