@@ -1,232 +1,212 @@
-#!/usr/bin/env python3
-"""
-generate_graphs.py
-Generate performance_results.csv and all three performance graphs
-for the Multithreaded Pthreads and OpenMP experiment.
-
-Actual measured values from student's machine.
-Sequential baseline: 1.787650 seconds
-
-Usage:
-    python3 generate_graphs.py
-"""
-
 import csv
 import os
-import sys
+import matplotlib.pyplot as plt
 
-# ---------------------------------------------------------------------------
-# Actual measured data (student's machine)
-# ---------------------------------------------------------------------------
+CSV_FILE = "performance/performance_results.csv"
+GRAPH_DIR = "performance/graphs"
 
-SEQ_TIME = 1.787650   # seconds
+os.makedirs(GRAPH_DIR, exist_ok=True)
 
-# Official thread counts (3-thread accidental run excluded)
-THREADS = [1, 2, 4, 6, 16]
+threads = []
+pthreads_time = []
+openmp_time = []
+sequential_time = []
 
-PTHREAD_TIMES = {
-    1:  1.789828,
-    2:  0.906504,
-    4:  0.511658,
-    6:  0.357663,
-    16: 0.200452,
-}
+# Read benchmark data
+with open(CSV_FILE, "r") as file:
+    reader = csv.DictReader(file)
 
-OMP_TIMES = {
-    1:  1.785037,
-    2:  0.888479,
-    4:  0.490306,
-    6:  0.359280,
-    16: 0.198500,
-}
+    for row in reader:
+        threads.append(int(row["Threads"]))
+        pthreads_time.append(float(row["Pthreads_Time_s"]))
+        openmp_time.append(float(row["OpenMP_Time_s"]))
+        sequential_time.append(float(row["Sequential_Time_s"]))
 
-# ---------------------------------------------------------------------------
-# Calculations
-# ---------------------------------------------------------------------------
+# Use the first sequential value as the baseline
+seq_time = sequential_time[0]
 
-def speedup(seq, par):
-    return round(seq / par, 4)
-
-def efficiency(spd, n):
-    return round((spd / n) * 100, 2)
-
-rows = []
-for t in THREADS:
-    pt = PTHREAD_TIMES[t]
-    ot = OMP_TIMES[t]
-    ps = speedup(SEQ_TIME, pt)
-    os_ = speedup(SEQ_TIME, ot)
-    pe = efficiency(ps, t)
-    oe = efficiency(os_, t)
-    rows.append({
-        "Threads":              t,
-        "Pthreads_Time_s":      pt,
-        "OpenMP_Time_s":        ot,
-        "Pthreads_Speedup":     ps,
-        "OpenMP_Speedup":       os_,
-        "Pthreads_Efficiency":  pe,
-        "OpenMP_Efficiency":    oe,
-    })
-
-# ---------------------------------------------------------------------------
-# Write CSV
-# ---------------------------------------------------------------------------
-
-script_dir  = os.path.dirname(os.path.abspath(__file__))
-perf_dir    = script_dir
-graphs_dir  = os.path.join(perf_dir, "graphs")
-os.makedirs(graphs_dir, exist_ok=True)
-
-csv_path = os.path.join(perf_dir, "performance_results.csv")
-fieldnames = [
-    "Threads",
-    "Pthreads_Time_s", "OpenMP_Time_s",
-    "Pthreads_Speedup", "OpenMP_Speedup",
-    "Pthreads_Efficiency", "OpenMP_Efficiency",
+# Calculate speedup
+pthreads_speedup = [
+    seq_time / t for t in pthreads_time
 ]
 
-with open(csv_path, "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(rows)
+openmp_speedup = [
+    seq_time / t for t in openmp_time
+]
 
-print(f"[OK] CSV written: {csv_path}")
+# Calculate efficiency
+pthreads_efficiency = [
+    (speedup / thread) * 100
+    for speedup, thread in zip(pthreads_speedup, threads)
+]
 
-# Print table to terminal
-print()
-print(f"{'Threads':>7} | {'Pth Time':>9} | {'OMP Time':>9} | "
-      f"{'Pth Spd':>8} | {'OMP Spd':>8} | {'Pth Eff%':>9} | {'OMP Eff%':>9}")
+openmp_efficiency = [
+    (speedup / thread) * 100
+    for speedup, thread in zip(openmp_speedup, threads)
+]
+
+# ---------------------------------------------------------
+# Graph 1: Execution Time vs Number of Threads
+# ---------------------------------------------------------
+
+plt.figure(figsize=(9, 6))
+
+plt.plot(
+    threads,
+    pthreads_time,
+    marker="o",
+    linewidth=2,
+    label="Pthreads"
+)
+
+plt.plot(
+    threads,
+    openmp_time,
+    marker="s",
+    linewidth=2,
+    label="OpenMP"
+)
+
+plt.axhline(
+    y=seq_time,
+    linestyle="--",
+    linewidth=1.5,
+    label=f"Sequential ({seq_time:.6f}s)"
+)
+
+plt.title("Execution Time vs Number of Threads", fontsize=14, fontweight="bold")
+plt.xlabel("Number of Threads", fontsize=12)
+plt.ylabel("Execution Time (seconds)", fontsize=12)
+plt.xticks(threads)
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.tight_layout()
+
+plt.savefig(
+    f"{GRAPH_DIR}/execution_time.png",
+    dpi=300
+)
+
+plt.close()
+
+# ---------------------------------------------------------
+# Graph 2: Speedup vs Number of Threads
+# ---------------------------------------------------------
+
+plt.figure(figsize=(9, 6))
+
+plt.plot(
+    threads,
+    pthreads_speedup,
+    marker="o",
+    linewidth=2,
+    label="Pthreads"
+)
+
+plt.plot(
+    threads,
+    openmp_speedup,
+    marker="s",
+    linewidth=2,
+    label="OpenMP"
+)
+
+# Ideal linear speedup
+plt.plot(
+    threads,
+    threads,
+    linestyle="--",
+    linewidth=1.5,
+    label="Ideal Speedup"
+)
+
+plt.title("Speedup vs Number of Threads", fontsize=14, fontweight="bold")
+plt.xlabel("Number of Threads", fontsize=12)
+plt.ylabel("Speedup (×)", fontsize=12)
+plt.xticks(threads)
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.ylim(bottom=0)
+plt.tight_layout()
+
+plt.savefig(
+    f"{GRAPH_DIR}/speedup.png",
+    dpi=300
+)
+
+plt.close()
+
+# ---------------------------------------------------------
+# Graph 3: Efficiency vs Number of Threads
+# ---------------------------------------------------------
+
+plt.figure(figsize=(9, 6))
+
+plt.plot(
+    threads,
+    pthreads_efficiency,
+    marker="o",
+    linewidth=2,
+    label="Pthreads"
+)
+
+plt.plot(
+    threads,
+    openmp_efficiency,
+    marker="s",
+    linewidth=2,
+    label="OpenMP"
+)
+
+# Ideal efficiency
+plt.axhline(
+    y=100,
+    linestyle="--",
+    linewidth=1.5,
+    label="Ideal Efficiency (100%)"
+)
+
+plt.title("Efficiency vs Number of Threads", fontsize=14, fontweight="bold")
+plt.xlabel("Number of Threads", fontsize=12)
+plt.ylabel("Efficiency (%)", fontsize=12)
+plt.xticks(threads)
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.ylim(0, 115)
+plt.tight_layout()
+
+plt.savefig(
+    f"{GRAPH_DIR}/efficiency.png",
+    dpi=300
+)
+
+plt.close()
+
+# ---------------------------------------------------------
+# Print calculated results
+# ---------------------------------------------------------
+
+print("\nPerformance Analysis")
+print("=" * 75)
+
+print(
+    f"{'Threads':<10}"
+    f"{'Pthreads':<15}"
+    f"{'OpenMP':<15}"
+    f"{'Pth Speedup':<15}"
+    f"{'OMP Speedup':<15}"
+)
+
 print("-" * 75)
-for r in rows:
-    print(f"{r['Threads']:>7} | {r['Pthreads_Time_s']:>9.6f} | "
-          f"{r['OpenMP_Time_s']:>9.6f} | "
-          f"{r['Pthreads_Speedup']:>8.4f} | {r['OpenMP_Speedup']:>8.4f} | "
-          f"{r['Pthreads_Efficiency']:>8.2f}% | {r['OpenMP_Efficiency']:>8.2f}%")
 
-# ---------------------------------------------------------------------------
-# Graphs (matplotlib)
-# ---------------------------------------------------------------------------
+for i in range(len(threads)):
+    print(
+        f"{threads[i]:<10}"
+        f"{pthreads_time[i]:<15.6f}"
+        f"{openmp_time[i]:<15.6f}"
+        f"{pthreads_speedup[i]:<15.3f}"
+        f"{openmp_speedup[i]:<15.3f}"
+    )
 
-try:
-    import matplotlib
-    matplotlib.use("Agg")   # non-interactive backend
-    import matplotlib.pyplot as plt
-    import matplotlib.ticker as ticker
-except ImportError:
-    print("\n[WARN] matplotlib not available — skipping graph generation.")
-    print("       Install with:  pip install matplotlib")
-    sys.exit(0)
-
-thread_vals  = [r["Threads"]             for r in rows]
-pt_times     = [r["Pthreads_Time_s"]     for r in rows]
-omp_times    = [r["OpenMP_Time_s"]       for r in rows]
-pt_speedup   = [r["Pthreads_Speedup"]    for r in rows]
-omp_speedup  = [r["OpenMP_Speedup"]      for r in rows]
-pt_eff       = [r["Pthreads_Efficiency"] for r in rows]
-omp_eff      = [r["OpenMP_Efficiency"]   for r in rows]
-
-STYLE = {
-    "pth_color":  "#2196F3",   # blue
-    "omp_color":  "#FF5722",   # deep orange
-    "seq_color":  "#9E9E9E",   # grey
-    "ideal_color":"#4CAF50",   # green
-    "figsize":    (8, 5),
-    "dpi":        150,
-    "linewidth":  2.2,
-    "markersize": 7,
-}
-
-def save_fig(fig, filename):
-    path = os.path.join(graphs_dir, filename)
-    fig.savefig(path, dpi=STYLE["dpi"], bbox_inches="tight")
-    plt.close(fig)
-    print(f"[OK] Graph saved: {path}")
-
-# ------------------------------------------------------------------
-# Graph 1 — Execution Time vs Number of Threads
-# ------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=STYLE["figsize"])
-
-ax.axhline(y=SEQ_TIME, color=STYLE["seq_color"], linestyle="--",
-           linewidth=1.5, label=f"Sequential baseline ({SEQ_TIME:.6f} s)")
-
-ax.plot(thread_vals, pt_times,
-        color=STYLE["pth_color"], marker="o",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="Pthreads")
-
-ax.plot(thread_vals, omp_times,
-        color=STYLE["omp_color"], marker="s",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="OpenMP")
-
-ax.set_title("Execution Time vs Number of Threads", fontsize=14, fontweight="bold")
-ax.set_xlabel("Number of Threads", fontsize=12)
-ax.set_ylabel("Execution Time (seconds)", fontsize=12)
-ax.set_xticks(thread_vals)
-ax.legend(fontsize=10)
-ax.grid(True, linestyle="--", alpha=0.5)
-ax.set_ylim(bottom=0)
-
-save_fig(fig, "execution_time.png")
-
-# ------------------------------------------------------------------
-# Graph 2 — Speedup vs Number of Threads
-# ------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=STYLE["figsize"])
-
-ideal_speedup = thread_vals  # 1x, 2x, 4x, 6x, 16x
-ax.plot(thread_vals, ideal_speedup,
-        color=STYLE["ideal_color"], linestyle="--",
-        linewidth=1.5, label="Ideal (linear) speedup")
-
-ax.plot(thread_vals, pt_speedup,
-        color=STYLE["pth_color"], marker="o",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="Pthreads")
-
-ax.plot(thread_vals, omp_speedup,
-        color=STYLE["omp_color"], marker="s",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="OpenMP")
-
-ax.set_title("Speedup vs Number of Threads", fontsize=14, fontweight="bold")
-ax.set_xlabel("Number of Threads", fontsize=12)
-ax.set_ylabel("Speedup", fontsize=12)
-ax.set_xticks(thread_vals)
-ax.legend(fontsize=10)
-ax.grid(True, linestyle="--", alpha=0.5)
-ax.set_ylim(bottom=0)
-
-save_fig(fig, "speedup.png")
-
-# ------------------------------------------------------------------
-# Graph 3 — Efficiency vs Number of Threads
-# ------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=STYLE["figsize"])
-
-ax.axhline(y=100, color=STYLE["ideal_color"], linestyle="--",
-           linewidth=1.5, label="Ideal efficiency (100%)")
-
-ax.plot(thread_vals, pt_eff,
-        color=STYLE["pth_color"], marker="o",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="Pthreads")
-
-ax.plot(thread_vals, omp_eff,
-        color=STYLE["omp_color"], marker="s",
-        linewidth=STYLE["linewidth"], markersize=STYLE["markersize"],
-        label="OpenMP")
-
-ax.set_title("Efficiency vs Number of Threads", fontsize=14, fontweight="bold")
-ax.set_xlabel("Number of Threads", fontsize=12)
-ax.set_ylabel("Efficiency (%)", fontsize=12)
-ax.set_xticks(thread_vals)
-ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.1f%%"))
-ax.legend(fontsize=10)
-ax.grid(True, linestyle="--", alpha=0.5)
-ax.set_ylim(0, 115)
-
-save_fig(fig, "efficiency.png")
-
-print("\n[DONE] All outputs generated successfully.")
+print("\n[ DONE ] Graphs generated successfully.")
+print(f"Graphs saved in: {GRAPH_DIR}/")

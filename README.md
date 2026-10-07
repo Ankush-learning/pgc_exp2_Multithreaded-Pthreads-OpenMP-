@@ -1,72 +1,86 @@
 # Multithreaded Programming Using Pthreads and OpenMP
 
-## Overview
+## Parallel and Graph Computing – Experiment 2
 
-This project explores multithreaded programming and parallel computing principles using two standard parallel programming models:
-- **POSIX Threads (Pthreads)**: Low-level API providing explicit control over thread creation, execution, and synchronization.
-- **OpenMP**: High-level, compiler-directive-driven API offering implicit thread management, automated work distribution, and structured coordination.
+This project demonstrates multithreaded programming and parallel computing concepts using **POSIX Threads (Pthreads)** and **OpenMP**.
 
-The experiment systematically demonstrates:
-- Thread creation and lifecycle management (`pthread_create`, `pthread_join`)
-- Work sharing and domain decomposition
-- Race conditions arising from unsynchronized shared-memory access
-- Mutual exclusion and synchronization mechanisms (`pthread_mutex_t`, `#pragma omp critical`)
-- Thread coordination using barrier synchronization (`#pragma omp barrier`)
-- Reduction operations for partial accumulations
-- Benchmarking, speedup, and efficiency evaluation comparing Sequential, Pthreads, and OpenMP implementations
+The experiment covers thread creation, work distribution, race conditions, synchronization, barrier coordination, reduction operations, and performance analysis.
 
 ---
 
-## Objectives
+## Team Members
 
-1. Understand the core principles of parallel programming and thread-based concurrency.
-2. Develop C programs demonstrating explicit thread creation and joining using **Pthreads**.
-3. Develop C programs utilizing **OpenMP** compiler directives for parallel execution and work-sharing loops.
-4. Demonstrate concurrency hazards, specifically race conditions on shared memory variables.
-5. Apply synchronization primitives (mutex locks and critical sections) to ensure thread-safe execution.
-6. Coordinate thread execution phases using barrier synchronization.
-7. Conduct empirical performance benchmarking across varying thread counts (1, 2, 4, 6, and 16 threads).
-8. Calculate and analyze **Speedup** and **Parallel Efficiency** against a single-threaded sequential baseline to understand scalability and parallel overhead.
+| Name | USN |
+|---|---|
+| Ankush | 01FE24BCI096 |
+| Shrikar | 01FE24BCI013 |
+| Shreya | 01FE24BCI033 |
+| Sai Shree Ram | 01FE24BCI034 |
+
+**University:** KLE Technological University, Hubballi
+**Program:** Computer Science and Artificial Intelligence
 
 ---
 
-## Environment
+## 1. Objectives
 
-- **Operating System:** Linux (Ubuntu under Windows Subsystem for Linux — WSL)
-- **Compiler:** GCC (GNU Compiler Collection)
-- **Programming Language:** C (C99 / C11)
-- **Parallel Libraries & Flags:**
-  - POSIX Threads: `-pthread`
-  - OpenMP: `-fopenmp`
+The objectives of this experiment are:
 
-### Compilation & Execution Commands
+1. Understand the fundamentals of multithreaded and parallel programming.
+2. Create and manage threads using Pthreads.
+3. Implement parallel programs using OpenMP.
+4. Understand work distribution and domain decomposition.
+5. Demonstrate race conditions in shared-memory programs.
+6. Apply synchronization using Pthread mutexes.
+7. Apply synchronization using OpenMP critical sections.
+8. Understand barrier synchronization.
+9. Demonstrate reduction operations in OpenMP.
+10. Benchmark sequential, Pthreads, and OpenMP implementations.
+11. Calculate speedup for different thread counts.
+12. Calculate parallel efficiency and analyze scalability.
 
-**Pthreads Programs:**
+---
+
+## 2. Technologies Used
+
+- **Programming Language:** C
+- **Python:** Graph generation and performance analysis
+- **Compiler:** GCC
+- **Operating System:** Ubuntu Linux through WSL
+- **Pthreads:** POSIX Threads
+- **OpenMP:** Open Multi-Processing
+- **Version Control:** Git and GitHub
+
+### Compilation Flags
+
+Pthreads programs:
+
 ```bash
 gcc filename.c -o filename -pthread
-./filename
 ```
 
-**OpenMP Programs:**
+OpenMP programs:
+
 ```bash
 gcc filename.c -o filename -fopenmp
-./filename
 ```
 
-**Sequential Program:**
+Sequential program:
+
 ```bash
 gcc sequential.c -o sequential
-./sequential
 ```
 
 ---
 
-## Project Structure
+## 3. Project Structure
 
 ```text
-Multithreaded-Pthreads-OpenMP/
+pgc_exp2_Multithreaded-Pthreads-OpenMP/
+│
 ├── README.md
 ├── .gitignore
+│
 ├── pthreads/
 │   ├── thread1.c
 │   ├── thread2.c
@@ -74,6 +88,7 @@ Multithreaded-Pthreads-OpenMP/
 │   ├── race.c
 │   ├── mutex.c
 │   └── pthread_perf.c
+│
 ├── openmp/
 │   ├── omp1.c
 │   ├── omp_sum.c
@@ -81,6 +96,7 @@ Multithreaded-Pthreads-OpenMP/
 │   ├── omp_critical.c
 │   ├── omp_barrier.c
 │   └── omp_perf.c
+│
 ├── performance/
 │   ├── sequential.c
 │   ├── generate_graphs.py
@@ -89,157 +105,665 @@ Multithreaded-Pthreads-OpenMP/
 │       ├── execution_time.png
 │       ├── speedup.png
 │       └── efficiency.png
-└── screenshots/
-    ├── sequential_result.png
-    └── parallel_performance.png
+│
 ```
 
 ---
 
-## Pthreads Programs
+# 4. Pthreads Experiments
 
-| Program | Source File | Description | Key Functions / Concepts |
-|---|---|---|---|
-| **Step 1: Single Thread** | [`pthreads/thread1.c`](pthreads/thread1.c) | Creates a single worker thread, executes a target function, and joins back to the main thread. | `pthread_create`, `pthread_join` |
-| **Step 2: Multiple Threads** | [`pthreads/thread2.c`](pthreads/thread2.c) | Spawns 4 concurrent threads with unique thread IDs. Demonstrates non-deterministic operating system scheduling. | Thread arrays, argument passing |
-| **Step 3: Work Distribution** | [`pthreads/thread_sum.c`](pthreads/thread_sum.c) | Divides an 8-element array evenly across 4 threads. Each computes a local partial sum before aggregating into the final total (360). | Work chunking, sub-array summation |
-| **Step 4: Race Condition** | [`pthreads/race.c`](pthreads/race.c) | 4 threads concurrently increment a shared variable 100,000 times each without synchronization, resulting in lost updates. | Shared memory, race hazard |
-| **Step 5: Mutex Protection** | [`pthreads/mutex.c`](pthreads/mutex.c) | Resolves the race condition by locking the critical section using a mutex, ensuring the exact expected count of 400,000. | `pthread_mutex_init`, `pthread_mutex_lock`, `pthread_mutex_unlock` |
-| **Step 6: Pthreads Performance** | [`pthreads/pthread_perf.c`](pthreads/pthread_perf.c) | Measures execution time for summing $N = 1,000,000,000\text{ iterations}$ across user-specified thread counts (1, 2, 4, 6, 16) using monotonic clock timing. | `clock_gettime(CLOCK_MONOTONIC)`, chunking |
+## Step 1 – Single Thread
 
----
+**File:** `pthreads/thread1.c`
 
-## OpenMP Programs
+A single worker thread is created using `pthread_create()`.
 
-| Program | Source File | Description | Key Directives / Concepts |
-|---|---|---|---|
-| **Step 7: Basic Parallel Region** | [`openmp/omp1.c`](openmp/omp1.c) | Spawns a parallel team of threads, each printing its unique thread identifier and the total team size. | `#pragma omp parallel`, `omp_get_thread_num()`, `omp_get_num_threads()` |
-| **Step 8: Work Sharing & Reduction** | [`openmp/omp_sum.c`](openmp/omp_sum.c) | Uses OpenMP loop work sharing and a reduction clause to compute the array sum across threads without race conditions. | `#pragma omp parallel for reduction(+:total_sum)` |
-| **Step 9: Race Condition** | [`openmp/omp_race.c`](openmp/omp_race.c) | Demonstrates race conditions in OpenMP when 4 parallel threads concurrently increment an unprotected shared counter. | Unsynchronized parallel region |
-| **Step 10: Critical Section** | [`openmp/omp_critical.c`](openmp/omp_critical.c) | Restricts access to the shared counter increment to one thread at a time using a critical section. | `#pragma omp critical` |
-| **Step 11: Barrier Synchronization** | [`openmp/omp_barrier.c`](openmp/omp_barrier.c) | Enforces phase synchronization: all threads complete Stage 1 before any thread proceeds to Stage 2. | `#pragma omp barrier` |
-| **Step 12: OpenMP Performance** | [`openmp/omp_perf.c`](openmp/omp_perf.c) | Benchmarks parallel computation of $N = 1,000,000,000\text{ iterations}$ using OpenMP work sharing and reduction across 1, 2, 4, 6, and 16 threads. | `#pragma omp parallel for reduction(+:sum)`, `omp_set_num_threads()` |
+The main thread waits for the worker thread using `pthread_join()`.
+
+### Concepts
+
+- `pthread_create()`
+- `pthread_join()`
+- Thread lifecycle
+- Worker thread execution
 
 ---
 
-## Performance Analysis
+## Step 2 – Multiple Threads
 
-To evaluate execution performance, a large computational workload was benchmarked across a sequential implementation, Pthreads, and OpenMP:
-- **Workload:** Numerical accumulation $\sum_{i=0}^{N-1} (i \times 10^{-6})$ for **$N = 1,000,000,000\text{ iterations}$**.
-- **Verification Result:** All sequential and parallel runs produced the identical verified mathematical sum:
-  $$\text{Result} = 499999999500.00$$
-- **Sequential Baseline Execution Time ($T_{\text{seq}}$):** `1.787650 seconds` (measured via [`performance/sequential.c`](performance/sequential.c))
-- **Benchmark Thread Counts:** 1, 2, 4, 6, and 16 threads.
+**File:** `pthreads/thread2.c`
 
----
+Four threads are created simultaneously.
 
-## Actual Results
+The program demonstrates that threads may execute in a different order depending on operating system scheduling.
 
-The following table summarizes the actual execution times measured on the test machine.
+### Concepts
 
-| Number of Threads | Pthreads Execution Time (s) | OpenMP Execution Time (s) |
-|:---:|:---:|:---:|
-| **1** | 1.789828 | 1.785037 |
-| **2** | 0.906504 | 0.888479 |
-| **4** | 0.511658 | 0.490306 |
-| **6** | 0.357663 | 0.359280 |
-| **16** | 0.200452 | 0.198500 |
+- Multiple concurrent threads
+- Thread IDs
+- Argument passing
+- Non-deterministic scheduling
 
-*Sequential baseline execution time: **1.787650 seconds**.*  
-*Raw benchmark records are maintained in [`performance/performance_results.csv`](performance/performance_results.csv).*
+Example output:
 
----
+```text
+Hello from Thread 1
+Hello from Thread 3
+Hello from Thread 4
+Hello from Thread 2
+All threads have finished.
+```
 
-## Speedup
-
-Speedup quantifies how much faster the parallel program executes compared to the sequential baseline:
-
-$$\text{Speedup} = \frac{T_{\text{seq}}}{T_{\text{parallel}}}$$
-
-| Threads | Sequential Time (s) | Pthreads Time (s) | Pthreads Speedup | OpenMP Time (s) | OpenMP Speedup |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| **1** | 1.787650 | 1.789828 | **0.9988x** | 1.785037 | **1.0015x** |
-| **2** | 1.787650 | 0.906504 | **1.9720x** | 0.888479 | **2.0120x** |
-| **4** | 1.787650 | 0.511658 | **3.4938x** | 0.490306 | **3.6460x** |
-| **6** | 1.787650 | 0.357663 | **4.9981x** | 0.359280 | **4.9756x** |
-| **16** | 1.787650 | 0.200452 | **8.9181x** | 0.198500 | **9.0058x** |
-
-**Observations:**
-- Speedup scales nearly linearly from 1 to 2 threads (~1.97x–2.01x) and continues strong scaling through 6 threads (~5.0x).
-- At 16 threads, speedup reaches approximately **8.92x (Pthreads)** and **9.01x (OpenMP)**.
+The order may change between executions.
 
 ---
 
-## Efficiency
+## Step 3 – Work Distribution
 
-Parallel efficiency measures how effectively the computational resources (threads) are utilized relative to ideal linear speedup:
+**File:** `pthreads/thread_sum.c`
 
-$$\text{Efficiency (\%)} = \left(\frac{\text{Speedup}}{\text{Number of Threads}}\right) \times 100$$
+An array is divided among four threads.
 
-| Threads | Pthreads Speedup | Pthreads Efficiency (%) | OpenMP Speedup | OpenMP Efficiency (%) |
-|:---:|:---:|:---:|:---:|:---:|
-| **1** | 0.9988x | **99.88%** | 1.0015x | **100.15%** |
-| **2** | 1.9720x | **98.60%** | 2.0120x | **100.60%** |
-| **4** | 3.4938x | **87.34%** | 3.6460x | **91.15%** |
-| **6** | 4.9981x | **83.30%** | 4.9756x | **82.93%** |
-| **16** | 8.9181x | **55.74%** | 9.0058x | **56.29%** |
+Each thread calculates a partial sum and the partial results are combined to produce the final sum.
 
-> **Note on Efficiency Values > 100%:**  
-> The slight values above 100% observed at low thread counts (e.g., OpenMP 1 thread at 100.15% and 2 threads at 100.60%) are mathematically produced because the parallel runs were measured independently from the sequential baseline run. Minor millisecond-level run-to-run timing variations caused by CPU frequency governors, OS scheduling, or cache state naturally account for these small variations around 100%.
+### Result
 
-**Observations:**
-- At low thread counts (1–2 threads), parallel efficiency is close to 100%, indicating minimal synchronization and management overhead.
-- As thread counts increase to 4 and 6, efficiency remains robust above 82%.
-- At 16 threads, efficiency drops to ~56% due to hardware limitations (physical core availability), context switching, thread scheduling, and memory bus bandwidth constraints.
+```text
+Thread 1 calculated sum = 30
+Thread 2 calculated sum = 70
+Thread 3 calculated sum = 110
+Thread 4 calculated sum = 150
+Total sum = 360
+```
 
----
+### Concepts
 
-## Graphs
-
-### 1. Execution Time vs. Number of Threads
-Shows the decrease in execution time as thread count increases, compared against the sequential baseline.
-
-![Execution Time vs Number of Threads](performance/graphs/execution_time.png)
-
-### 2. Speedup vs. Number of Threads
-Shows the measured speedup curves for Pthreads and OpenMP against the ideal linear speedup line.
-
-![Speedup vs Number of Threads](performance/graphs/speedup.png)
-
-### 3. Efficiency vs. Number of Threads
-Illustrates parallel efficiency across thread counts relative to 100% ideal efficiency.
-
-![Efficiency vs Number of Threads](performance/graphs/efficiency.png)
+- Domain decomposition
+- Work distribution
+- Partial results
+- Thread-based computation
 
 ---
 
-## Screenshots
+## Step 4 – Race Condition
 
-### 1. Sequential Baseline Execution
-Shows compilation, execution, output verification (`499999999500.00`), and baseline time (`1.787650 seconds`).
+**File:** `pthreads/race.c`
 
-![Sequential Baseline](screenshots/sequential_result.png)
+Four threads increment a shared counter 100,000 times each.
 
-### 2. Parallel Performance Benchmark
-Shows combined Pthreads and OpenMP multi-thread benchmark runs across 1, 2, 4, 6, and 16 threads producing consistent verified output `499999999500.00`.
+The expected result is:
 
-![Parallel Performance](screenshots/parallel_performance.png)
+```text
+400000
+```
+
+However, the program does not use synchronization.
+
+### Observed Result
+
+```text
+Expected counter = 400000
+Actual counter = 105873
+```
+
+The actual value is smaller because multiple threads can read and modify the shared variable simultaneously, causing **lost updates**.
+
+### Concept
+
+A race condition occurs when multiple threads access shared data concurrently and the final result depends on the timing of their execution.
 
 ---
 
-## Conclusion
+## Step 5 – Mutex Synchronization
 
-This experiment demonstrates multithreaded programming concepts and performance trade-offs using Pthreads and OpenMP:
+**File:** `pthreads/mutex.c`
 
-1. **Programming Paradigms:**
-   - **Pthreads** provides granular control over individual thread life cycles and memory structures, requiring explicit chunk calculation and join operations.
-   - **OpenMP** simplifies development through declarative compiler directives (`#pragma omp parallel for reduction`), achieving comparable execution times with significantly less boilerplate code.
+The race condition is fixed using a Pthread mutex.
 
-2. **Synchronization & Concurrency Hazards:**
-   - Unsynchronized concurrent modification of shared variables leads to race conditions and corrupted data in both models.
-   - Mutexes (`pthread_mutex_t`) and critical sections (`#pragma omp critical`) reliably eliminate race hazards at the cost of sequential serialization for protected regions.
+The critical section is protected using:
 
-3. **Performance & Scalability:**
-   - Both implementations reduced execution time from **1.788 seconds down to ~0.200 seconds**, achieving a peak speedup of **~9.0x**.
-   - Near-linear scaling was achieved at lower thread counts (1 to 2 threads with >98% efficiency).
-   - Real-world parallel scaling deviates from theoretical linearity at higher thread counts (16 threads at ~56% efficiency) due to physical core limits, thread scheduling overhead, context switching, and memory bus saturation.
+```c
+pthread_mutex_lock()
+pthread_mutex_unlock()
+```
+
+### Result
+
+```text
+Expected counter = 400000
+Actual counter = 400000
+```
+
+The mutex ensures that only one thread modifies the shared counter at a time.
+
+---
+
+## Step 6 – Pthreads Performance
+
+**File:** `pthreads/pthread_perf.c`
+
+A large numerical computation is performed using different numbers of threads.
+
+The benchmark uses:
+
+```text
+N = 1,000,000,000 iterations
+```
+
+The computation calculates:
+
+```text
+sum(i × 10^-6)
+```
+
+for:
+
+```text
+i = 0 ... N-1
+```
+
+The verified result is:
+
+```text
+499999999500.00
+```
+
+Thread counts tested:
+
+```text
+1, 2, 4, 6, 16
+```
+
+---
+
+# 5. OpenMP Experiments
+
+## Step 7 – Basic Parallel Region
+
+**File:** `openmp/omp1.c`
+
+OpenMP is used to create a parallel region.
+
+The program displays:
+
+- Thread ID
+- Total number of threads
+
+Example:
+
+```text
+Hello from Thread 0 of 12
+Hello from Thread 1 of 12
+...
+```
+
+The execution order of threads is not guaranteed.
+
+### Concepts
+
+```c
+#pragma omp parallel
+omp_get_thread_num()
+omp_get_num_threads()
+```
+
+---
+
+## Step 8 – Work Sharing and Reduction
+
+**File:** `openmp/omp_sum.c`
+
+The array is processed using OpenMP parallel work sharing.
+
+A reduction operation is used to safely combine partial results.
+
+### Result
+
+```text
+Total sum = 360
+```
+
+### Important Directive
+
+```c
+#pragma omp parallel for reduction(+:total_sum)
+```
+
+Reduction avoids the race condition that would occur if all threads directly modified the same variable.
+
+---
+
+## Step 9 – OpenMP Race Condition
+
+**File:** `openmp/omp_race.c`
+
+Four OpenMP threads increment a shared counter without synchronization.
+
+### Observed Result
+
+```text
+Expected counter = 400000
+Actual counter = 100188
+```
+
+The result is incorrect because the shared variable is accessed concurrently without protection.
+
+---
+
+## Step 10 – OpenMP Critical Section
+
+**File:** `openmp/omp_critical.c`
+
+The race condition is fixed using:
+
+```c
+#pragma omp critical
+```
+
+### Result
+
+```text
+Expected counter = 400000
+Actual counter = 400000
+```
+
+The critical section ensures that only one thread executes the protected section at a time.
+
+---
+
+## Step 11 – Barrier Synchronization
+
+**File:** `openmp/omp_barrier.c`
+
+The program contains two execution stages.
+
+All threads must finish Stage 1 before any thread can begin Stage 2.
+
+This is achieved using:
+
+```c
+#pragma omp barrier
+```
+
+Example output:
+
+```text
+Thread 3 completed Stage 1
+Thread 0 completed Stage 1
+Thread 1 completed Stage 1
+Thread 2 completed Stage 1
+
+Thread 2 started Stage 2
+Thread 3 started Stage 2
+Thread 0 started Stage 2
+Thread 1 started Stage 2
+```
+
+### Concept
+
+A barrier provides synchronization between phases of parallel execution.
+
+---
+
+## Step 12 – OpenMP Performance
+
+**File:** `openmp/omp_perf.c`
+
+The same numerical workload used for the Pthreads benchmark is implemented using OpenMP.
+
+The following thread counts were tested:
+
+```text
+1, 2, 4, 6, 16
+```
+
+The verified computation result was:
+
+```text
+499999999500.00
+```
+
+---
+
+# 6. Performance Analysis
+
+The performance experiment compares:
+
+- Sequential execution
+- Pthreads
+- OpenMP
+
+### Workload
+
+```text
+N = 1,000,000,000 iterations
+```
+
+### Verified Result
+
+```text
+499999999500.00
+```
+
+### Sequential Baseline
+
+The measured sequential execution time was:
+
+```text
+3.547489 seconds
+```
+
+---
+
+## 6.1 Execution Time Results
+
+The following measurements were obtained on the test system.
+
+| Threads | Pthreads Time (s) | OpenMP Time (s) |
+|---:|---:|---:|
+| 1 | 3.318546 | 3.373385 |
+| 2 | 1.895705 | 1.387085 |
+| 4 | 0.725044 | 0.716352 |
+| 6 | 0.591749 | 0.568732 |
+| 16 | 0.417068 | 0.399610 |
+
+### Observation
+
+Execution time decreases as the number of threads increases.
+
+OpenMP produced a lower execution time than Pthreads at 2, 4, 6, and 16 threads in this experiment.
+
+---
+
+# 7. Speedup
+
+Speedup is calculated using:
+
+```text
+Speedup = Sequential Execution Time / Parallel Execution Time
+```
+
+The sequential baseline was:
+
+```text
+3.547489 seconds
+```
+
+### Speedup Results
+
+| Threads | Pthreads Speedup | OpenMP Speedup |
+|---:|---:|---:|
+| 1 | 1.069× | 1.052× |
+| 2 | 1.871× | 2.558× |
+| 4 | 4.893× | 4.952× |
+| 6 | 5.995× | 6.238× |
+| 16 | 8.506× | 8.877× |
+
+### Observation
+
+At 16 threads:
+
+- Pthreads achieved **8.506× speedup**
+- OpenMP achieved **8.877× speedup**
+
+OpenMP achieved the highest speedup in this experiment.
+
+---
+
+# 8. Parallel Efficiency
+
+Parallel efficiency is calculated using:
+
+```text
+Efficiency (%) = (Speedup / Number of Threads) × 100
+```
+
+### Efficiency Results
+
+| Threads | Pthreads Efficiency | OpenMP Efficiency |
+|---:|---:|---:|
+| 1 | 106.90% | 105.16% |
+| 2 | 93.57% | 127.88% |
+| 4 | 122.32% | 123.80% |
+| 6 | 99.92% | 103.96% |
+| 16 | 53.16% | 55.48% |
+
+### Note on Efficiency Above 100%
+
+Some calculated efficiency values are above 100%.
+
+This does not mean the parallel implementation achieved physically impossible performance.
+
+The sequential and parallel programs were measured in separate executions. Small differences in CPU frequency, operating-system scheduling, cache state, and system load can cause timing variation.
+
+Therefore, values slightly above 100% should be interpreted as measurement variation around the ideal value rather than literal superlinear efficiency.
+
+---
+
+# 9. Graphs
+
+## Execution Time vs Number of Threads
+
+This graph compares the execution time of Pthreads and OpenMP as the number of threads increases.
+
+![Execution Time](performance/graphs/execution_time.png)
+
+---
+
+## Speedup vs Number of Threads
+
+This graph compares the measured speedup with the ideal linear speedup.
+
+![Speedup](performance/graphs/speedup.png)
+
+---
+
+## Efficiency vs Number of Threads
+
+This graph shows the parallel efficiency of Pthreads and OpenMP.
+
+![Efficiency](performance/graphs/efficiency.png)
+
+---
+
+# 10. Comparison: Pthreads vs OpenMP
+
+| Feature | Pthreads | OpenMP |
+|---|---|---|
+| Thread creation | Explicit | Mostly automatic |
+| Thread management | Programmer controlled | Runtime managed |
+| Work distribution | Manual | Compiler/runtime assisted |
+| Synchronization | Mutexes, joins, etc. | Critical, barrier, reduction, etc. |
+| Programming complexity | Higher | Lower |
+| Control | Fine-grained | Higher-level abstraction |
+| Performance in this experiment | Very good | Slightly better overall |
+
+### Key Observation
+
+Both Pthreads and OpenMP provide significant performance improvements over the sequential implementation.
+
+OpenMP achieved slightly better performance for the tested workload at higher thread counts while requiring less explicit thread-management code.
+
+---
+
+# 11. Key Concepts Demonstrated
+
+### Thread Creation
+
+Pthreads:
+
+```c
+pthread_create()
+```
+
+OpenMP:
+
+```c
+#pragma omp parallel
+```
+
+### Thread Synchronization
+
+Pthreads:
+
+```c
+pthread_mutex_lock()
+pthread_mutex_unlock()
+```
+
+OpenMP:
+
+```c
+#pragma omp critical
+```
+
+### Barrier Synchronization
+
+```c
+#pragma omp barrier
+```
+
+### Reduction
+
+```c
+#pragma omp parallel for reduction(+:sum)
+```
+
+### Thread Joining
+
+```c
+pthread_join()
+```
+
+---
+
+# 12. How to Run the Experiments
+
+## Pthreads
+
+Example:
+
+```bash
+gcc pthreads/thread1.c -o thread1 -pthread
+./thread1
+```
+
+For the performance benchmark:
+
+```bash
+gcc pthreads/pthread_perf.c -o pthread_perf -pthread
+./pthread_perf
+```
+
+Enter one of:
+
+```text
+1
+2
+4
+6
+16
+```
+
+---
+
+## OpenMP
+
+Example:
+
+```bash
+gcc openmp/omp1.c -o omp1 -fopenmp
+./omp1
+```
+
+For the performance benchmark:
+
+```bash
+gcc openmp/omp_perf.c -o omp_perf -fopenmp
+./omp_perf
+```
+
+Enter one of:
+
+```text
+1
+2
+4
+6
+16
+```
+
+---
+
+## Sequential
+
+```bash
+gcc performance/sequential.c -o sequential
+./sequential
+```
+
+---
+
+# 13. Generating Performance Graphs
+
+The graph-generation script is written in Python.
+
+Run:
+
+```bash
+python performance/generate_graphs.py
+```
+
+The generated graphs are stored in:
+
+```text
+performance/graphs/
+```
+
+The script generates:
+
+```text
+execution_time.png
+speedup.png
+efficiency.png
+```
+
+---
+
+# 14. Conclusion
+
+This experiment demonstrates the fundamental concepts of multithreaded and parallel programming using both **Pthreads** and **OpenMP**.
+
+The Pthreads experiments demonstrated explicit thread creation, multiple concurrent threads, work distribution, race conditions, and mutex-based synchronization.
+
+The OpenMP experiments demonstrated parallel regions, work sharing, reduction, race conditions, critical sections, and barrier synchronization.
+
+The performance analysis showed that both approaches can significantly reduce execution time compared with sequential execution.
+
+For the tested workload, the best measured results were obtained using **16 threads**:
+
+```text
+Pthreads = 0.417068 seconds
+OpenMP   = 0.399610 seconds
+```
+
+The corresponding speedups were:
+
+```text
+Pthreads = 8.506×
+OpenMP   = 8.877×
+```
+
+Thus, OpenMP achieved a slightly better performance than Pthreads for the tested workload.
+
+The experiment also demonstrates that increasing the number of threads does not result in unlimited performance improvement. At higher thread counts, factors such as thread-management overhead, scheduling, hardware resources, and contention reduce parallel efficiency.
+
+Overall, the experiment provides practical understanding of **thread concurrency, synchronization, race conditions, parallel workload distribution, speedup, efficiency, and scalability**.
+
+---
+
+## Author
+
+**KLE Technological University – Computer Science and Artificial Intelligence**
+
+Parallel and Graph Computing – Experiment 2
